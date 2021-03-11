@@ -36,17 +36,18 @@ class com_i2c():
 
 class lcd(object):
 
-    def __init__(self):
-        self.com = com_i2c().scan_i2c()
-        self.i2c = com_i2c().i2c_bus
-        self.oled = SSD1306_I2C(LX, LY, self.i2c, self.com )
+    def __init__(self,com,i2c):
+        self.com  = com
+        self.i2c  = i2c
+        self.oled = SSD1306_I2C(LX, LY, i2c, com )
 
-    def write(self, posx,posy,texto):
+    def simple_text(self, posx:int,posy:int,texto:str):
         self.oled.fill(0) #Limpiando la pantalla
         self.oled.text(texto, posx, posy)
         self.oled.show()
 
-
+    def text_template(self,pos:dict,text_template:str,values:list):
+        pass
 
         
 
