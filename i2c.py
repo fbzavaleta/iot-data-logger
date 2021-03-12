@@ -13,8 +13,8 @@ from ssd1306 import SSD1306_I2C
 
 #definiciones importantes
 
-SCL = 5
-SDA = 4
+SCL = 5   #Cable de pulsos de clock
+SDA = 4   #Cable de datos
 LX  = 128 #largura de el lcd
 LY  = 64  #Altura del lcd
 
@@ -46,8 +46,19 @@ class lcd(object):
         self.oled.text(texto, posx, posy)
         self.oled.show()
 
-    def text_template(self,pos:dict,text_template:str,values:list):
-        pass
+    def text_template(self,pos:list,text_template:list):
+        self.oled.fill(0)
+
+        if len(pos) != len(text_template):
+            exit("Las coordenadas no coinciden con la cantidad de templates")
+
+        else:
+            for coordxy in pos:
+                n = pos.index(coordxy)
+                self.oled.text(text_template[n], coordxy[0], coordxy[1])
+        
+        self.oled.show()
+
 
         
 
