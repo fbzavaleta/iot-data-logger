@@ -7,6 +7,8 @@ Autor: Eng. Francis Benjamin
 Fecha: 09/03/2021
 """
 
+
+
 import uasyncio
 import btree
 from time import sleep
@@ -21,7 +23,7 @@ oled       = i2c.lcd(adress_i2c[0],i2c_bus) #primer adress i2c
 rtc        = i2c.rtc(i2c_bus)
 
 
-async def blink(led, period_ms):
+async def blink(led):
 
     led_ = Pin(led, Pin.OUT)
     while True:
@@ -29,20 +31,20 @@ async def blink(led, period_ms):
         led_.on()
         await uasyncio.sleep_ms(500)
         led_.off()
-        await uasyncio.sleep_ms(period_ms)
+        await uasyncio.sleep_ms(500)
 
 
-async def print_test(period_ms):
+async def print_test():
     
     while True:
         posiciones = [ (0,0), (10,0),(15,0)]
         templates = ["1", "2", "3"]
         oled.text_template(posiciones,templates)
-        await uasyncio.sleep_ms(500)
+        await uasyncio.sleep(1)
         
         oled.simple_text(0,0,"teste")
 
-        await uasyncio.sleep_ms(period_ms)
+        await uasyncio.sleep(1)
 
 
 def print_infos(PinNumber):
@@ -50,14 +52,15 @@ def print_infos(PinNumber):
 
 #####################3
 ######
-async def main(led,ms):
-    uasyncio.create_task(blink(led,500))
-    uasyncio.create_task(print_test(500))
-    await uasyncio.sleep_ms(10000)
+async def main(led):
+    uasyncio.create_task(blink(led))
+    uasyncio.create_task(print_test())
+    await uasyncio.sleep_ms(100000) #2000000
 
+    
 
-uasyncio.run(main(2,500))
-sleep(1)
+uasyncio.run(main(2))
+
 
     
 

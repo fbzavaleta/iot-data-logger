@@ -26,7 +26,7 @@ class io():
         return  self.analog.read()
 
     def digital_sendbutton(self):
-        return self.digital_sendbutton.value()
+        return self.sendbutton.value()
 
     
         
