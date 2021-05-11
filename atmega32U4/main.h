@@ -1,18 +1,9 @@
 /*
-Definiciones del Hardware
-*/
-#define F_CPU 16000000UL     //8MHz
-#define __AVR_ATmega32U4__
-
-
-/*
-IOs sensor RGB
+Puertos del microcontrolador
 */
 
-#define S0   0x80  //PB7
-#define S1   0x40  //PB6
-#define S2   0x20  //PB5
-#define S3   0x10  //PB4
-#define SOUT 0x40  //PE6
-
-  
+#define S2   0x80  //PB7 ok
+#define S3   0x40  //PB6 ok
+#define S1   0x40  //PE6
+#define S0   0x10  //PB4 ok
+#define SOUT 0x40  //PD6
