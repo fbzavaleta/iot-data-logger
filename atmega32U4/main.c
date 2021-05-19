@@ -2,14 +2,19 @@
 #include "main.h"
 
 
+
 /*
 calculador de timer:
 https://eleccelerator.com/avr-timer-calculator/
 */
 
 char teste [] = "Teste final 2\r\n";
+char msg_1 [] = "Setado A\r\n";
+int period;
 
 int cicle = 0;
+int contador = 0;
+uint8_t up_sout =0;
 
 
 int Rojo_Frec = 0;
@@ -43,13 +48,36 @@ void COUNTER_setup(int t_ticks)
 
 int main()
 {
+    RGB_Setup();
     USB_Init_Handle();
     COUNTER_setup(156); //intervalos de 0.01 segundos(ciclo de máquina)
+    char countchar[8];
+
 
 
     for (;;)
     {
-        //loop
+        PORTB &= ( (S2 | S3) ^ 0xFF); // Setando S2 y S3 en LOW
+
+        up_sout = PIND & 0x40;
+
+        if (up_sout == 0x00)
+        {
+            char valor[8];
+            sprintf(valor,"%i",cicle);
+            USB_Device_write_Com(valor);
+            EVENT_USB_Device_Release();
+            cicle = 0;
+        }
+        else
+        {
+
+        }
+
+        Delay_MS(50);
+
+
+        
     }
     
     
@@ -63,11 +91,13 @@ ISR(TIMER0_COMPA_vect)
 {
     cicle++;
 
+/*
     if (cicle > 100) // 0.01s * 100 = 1 segundo
     {
         USB_Device_write_Com(teste);
         EVENT_USB_Device_Release();
         cicle = 0;
+        contador++;
     }
-    
+*/
 }
