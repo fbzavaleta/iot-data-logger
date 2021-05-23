@@ -7,3 +7,9 @@ Puertos del microcontrolador
 #define S1   0x40  //PE6
 #define S0   0x10  //PB4 
 #define SOUT 0x40  //PD6
+
+/*
+Tiempo
+*/
+
+#define __TIME_50S_ 5000
