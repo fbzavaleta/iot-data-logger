@@ -26,7 +26,7 @@ void RGB_Setup()
     PORTB = 0b01000000;
 }
 
-void COUNTER_setup(int t_ticks)
+void TIMER_COMPARE_setup(int t_ticks)
 {
     //Encontrar el registrador conteo TCCR0A(pag 104)
 
@@ -69,7 +69,8 @@ void Precise_delay(int seconds)
 
 ISR(PCINT0_vect)
 {
-    logic=1;
+    PORTB ^= (1<<PB5);
+    logic++;
 }
 
 int main()
@@ -77,13 +78,17 @@ int main()
     RGB_Setup();
     USB_Init_Handle();
     PIN_Interrup_setup();
+    DDRB |= 0b00100000;
     
     char sensor_salida[8];
+    /*
+    No tengo que fijarme en el sincornismo, unicamente en un flag que diga si detecto 
+    interrupcion para ir al siguiente
+    */
 
     do
     {   
         sprintf(sensor_salida,"%i\n", logic);
-        //USB_Device_write_Com("sensor_salida\n");
 
         PORTB &= 0b11101110; //s2 low s3 low
         USB_Device_write_Com("Activado1\n");
@@ -99,7 +104,8 @@ int main()
         USB_Device_write_Com("Activado3\n");
         USB_Device_write_Com(sensor_salida);
         Precise_delay(10);
-
+        
+       
     } while (1);
         
     
