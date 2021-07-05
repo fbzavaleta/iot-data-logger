@@ -17,6 +17,8 @@ int Rojo_Frec  = 0;
 int Verde_Frec = 0;
 int Azul_Frec  = 0;
 
+int TimerOverflow = 0;
+
 void RGB_Setup()
 {
     //Configurando salidas y entradas
@@ -26,7 +28,12 @@ void RGB_Setup()
     PORTB = 0b01000000;
 }
 
-void TIMER_COMPARE_setup(int t_ticks)
+/*
+Habilita  interrupciones por
+comparacion de la variable de estoro
+*/
+
+void ConfigInterr_Compare(int t_ticks)
 {
     //Encontrar el registrador conteo TCCR0A(pag 104)
 
@@ -37,12 +44,32 @@ void TIMER_COMPARE_setup(int t_ticks)
     TCCR0B = (1<<CS02) | (1<<CS00); //preescaler en 1024  pag 108 
 }
 
-void PIN_Interrup_setup()
+
+/*
+Habilita  un determinado PIN, cuando este cambia
+de estado, genera una interrupcion
+*/
+void ConfigInterr_Changestate()
 {
+    /*
+    Configuracion del timer0 - interrupcion por cambio de estado
+    */
     PCICR = (1<<PCIE0); // Habilitando change interrupt control pag91 11.1.5
     PCMSK0 = (1 << PCINT2);//HAbilitando el PB2 pag 91 11.1.7
-    //PORTB |= 0b00000100;
-    sei(); // HAbilitando globalmente las interrupciones
+
+
+}
+
+/*
+Habilita interrupciones por overflow
+*/
+void ConfigInterr_Overflow()
+{
+    /*
+    Configuracion del timer1- interrupcion por overflow
+    */
+    TIMSK1 = (1 << TOIE0); // interrupcion por overflow
+    TCCR1A = 0; //Operacion normal pag 131
     
 }
 
@@ -63,21 +90,34 @@ void Precise_delay(int seconds)
         while ((TIFR0 & 0x01) == 0x00); // caso ocurra una interrupcion
         TIFR0 = 0x01;
         counter++;
-    }
-    
+    } 
 }
 
+/*
+Cuando ocurre una interrupción- cambio de estado
+*/
 ISR(PCINT0_vect)
 {
     PORTB ^= (1<<PB5);
     logic++;
 }
 
+/*
+Cuando ocurre una interrupción- Overflow
+*/
+ISR(TIMER1_OVF_vect)
+{
+    TimerOverflow++;
+}
+
 int main()
 {
     RGB_Setup();
     USB_Init_Handle();
-    PIN_Interrup_setup();
+    ConfigInterr_Changestate();
+    sei();
+    ConfigInterr_Overflow();
+
     DDRB |= 0b00100000;
     
     char sensor_salida[8];
@@ -112,6 +152,12 @@ int main()
 }
 
 /*
+Primero habilitar la funcion de comparacion
+*/
+
+/*
+Cuando ocurre una interrupción- Comparacion
+
 ISR(TIMER0_COMPA_vect)
 {
     cicle++;
