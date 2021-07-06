@@ -110,6 +110,18 @@ ISR(TIMER1_OVF_vect)
     TimerOverflow++;
 }
 
+int Pulse_Messure()
+{
+    /*Limpieza*/
+    TCNT1 = 0; // Limpieza del contador
+    TCCR1B = (1<< ICES1) | (1 << CS10); // rising (positive) edge | clk I/O /1 (No prescaling pag134
+    TIFR1 = (1 << ICF1); //Limpiando el input capture flag pag 138
+    TIFR1 = (1 << TOV1); //Limpienado el flag de overflow pag 138
+
+    
+
+}
+
 int main()
 {
     RGB_Setup();
