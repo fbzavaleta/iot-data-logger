@@ -3,6 +3,7 @@
 /*
 calculador de timer:
 https://eleccelerator.com/avr-timer-calculator/
+https://www.electronicwings.com/avr-atmega/ultrasonic-module-hc-sr04-interfacing-with-atmega1632
 */
 
 /*
@@ -12,7 +13,7 @@ S3  --> PB0
 S2  --> PB4
 OUT --> PB2
 */
-int logic = 0;
+
 int Rojo_Frec  = 0;
 int Verde_Frec = 0;
 int Azul_Frec  = 0;
@@ -23,47 +24,18 @@ void RGB_Setup()
 {
     //Configurando salidas y entradas
     DDRB = 0b11010001;
+    DDRD = 0b00000000;
 
     //Configurando las frecuencias en 20% s0 high s1 low
     PORTB = 0b01000000;
 }
 
-/*
-Habilita  interrupciones por
-comparacion de la variable de estoro
-*/
 
-void ConfigInterr_Compare(int t_ticks)
-{
-    //Encontrar el registrador conteo TCCR0A(pag 104)
-
-    TCCR0A = (1 << WGM01); //set CTC: cuando numero de ticks math, genera una interrupcion pag106
-    OCR0A  = t_ticks; // El valor total de ticks que sera comparado, pag 109
-    TIMSK0 = (1 << OCIE0A); //habilita la interrupcion pag 109
-    sei();
-    TCCR0B = (1<<CS02) | (1<<CS00); //preescaler en 1024  pag 108 
-}
-
-
-/*
-Habilita  un determinado PIN, cuando este cambia
-de estado, genera una interrupcion
-*/
-void ConfigInterr_Changestate()
-{
-    /*
-    Configuracion del timer0 - interrupcion por cambio de estado
-    */
-    PCICR = (1<<PCIE0); // Habilitando change interrupt control pag91 11.1.5
-    PCMSK0 = (1 << PCINT2);//HAbilitando el PB2 pag 91 11.1.7
-
-
-}
 
 /*
 Habilita interrupciones por overflow
 */
-void ConfigInterr_Overflow()
+void ConfigInterr_Overflow_InputCapture()
 {
     /*
     Configuracion del timer1- interrupcion por overflow
@@ -71,6 +43,31 @@ void ConfigInterr_Overflow()
     TIMSK1 = (1 << TOIE0); // interrupcion por overflow
     TCCR1A = 0; //Operacion normal pag 131
     
+}
+
+long Pulse_Messure()
+{
+    long pulse_ms;
+    /*Limpieza*/
+    TCNT1 = 0; // Limpieza del contador
+    TCCR1B = (1<< ICES1) | (1 << CS10); // rising (positive) edge | clk I/O /1 (No prescaling pag134
+    TIFR1 = (1 << ICF1); //Limpiando el input capture flag pag 138 PD4
+    TIFR1 = (1 << TOV1); //Limpienado el flag de overflow pag 138
+
+    while (TIFR1 & (1 << ICF1) == 0) // esperando al rising edge
+
+    TCNT1 = 0; // Limpieza del contador
+    TCCR1B = (1 << CS10); // no preescaler  fallind edge
+    TIFR1 = (1 << ICF1); //Limpiando el input capture flag pag 138
+    TIFR1 = (1 << TOV1); //Limpienado el flag de overflow pag 138
+
+    TimerOverflow = 0;/* Clear Timer overflow count */
+    
+    while ((TIFR1 & (1 << ICF1)) == 0);/* Wait for falling edge */
+
+    pulse_ms = ICR1 + (65535 * TimerOverflow);
+
+    return pulse_ms;
 }
 
 void Precise_delay(int seconds)
@@ -93,14 +90,6 @@ void Precise_delay(int seconds)
     } 
 }
 
-/*
-Cuando ocurre una interrupción- cambio de estado
-*/
-ISR(PCINT0_vect)
-{
-    PORTB ^= (1<<PB5);
-    logic++;
-}
 
 /*
 Cuando ocurre una interrupción- Overflow
@@ -110,52 +99,45 @@ ISR(TIMER1_OVF_vect)
     TimerOverflow++;
 }
 
-int Pulse_Messure()
-{
-    /*Limpieza*/
-    TCNT1 = 0; // Limpieza del contador
-    TCCR1B = (1<< ICES1) | (1 << CS10); // rising (positive) edge | clk I/O /1 (No prescaling pag134
-    TIFR1 = (1 << ICF1); //Limpiando el input capture flag pag 138
-    TIFR1 = (1 << TOV1); //Limpienado el flag de overflow pag 138
 
-    
-
-}
 
 int main()
 {
     RGB_Setup();
     USB_Init_Handle();
-    ConfigInterr_Changestate();
     sei();
-    ConfigInterr_Overflow();
+
+    ConfigInterr_Overflow_InputCapture();
 
     DDRB |= 0b00100000;
     
+    
     char sensor_salida[8];
-    /*
-    No tengo que fijarme en el sincornismo, unicamente en un flag que diga si detecto 
-    interrupcion para ir al siguiente
-    */
+
 
     do
     {   
-        sprintf(sensor_salida,"%i\n", logic);
-
+        
         PORTB &= 0b11101110; //s2 low s3 low
+        sprintf(sensor_salida,"%li\n", Pulse_Messure());
         USB_Device_write_Com("Activado1\n");
         USB_Device_write_Com(sensor_salida);
         Precise_delay(10);
+        
 
         PORTB &= ((1 << PB4) | (1 << PB0)); //s2 y s3 high
+        sprintf(sensor_salida,"%li\n", Pulse_Messure());
         USB_Device_write_Com("Activado2\n");
         USB_Device_write_Com(sensor_salida);
         Precise_delay(10);
+     
 
         PORTB |= 0b00000001; // s2 low s3 high
+        sprintf(sensor_salida,"%li\n", Pulse_Messure());
         USB_Device_write_Com("Activado3\n");
         USB_Device_write_Com(sensor_salida);
         Precise_delay(10);
+
         
        
     } while (1);
@@ -163,21 +145,3 @@ int main()
     
 }
 
-/*
-Primero habilitar la funcion de comparacion
-*/
-
-/*
-Cuando ocurre una interrupción- Comparacion
-
-ISR(TIMER0_COMPA_vect)
-{
-    cicle++;
-
-    if (cicle > 1000) //0.01s * 500 = 5 segundo
-    {
-        cicle = 0;
-    }
-
-}
-*/
