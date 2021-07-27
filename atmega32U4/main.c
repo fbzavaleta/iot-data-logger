@@ -45,16 +45,17 @@ void ConfigInterr_Overflow_InputCapture()
     
 }
 
+
 long Pulse_Messure()
 {
     long pulse_ms;
     /*Limpieza*/
     TCNT1 = 0; // Limpieza del contador
-    TCCR1B = (1<< ICES1) | (1 << CS10); // rising (positive) edge | clk I/O /1 (No prescaling pag134
+    TCCR1B = (0<< ICES1) | (1 << CS10); // rising (positive) edge | clk I/O /1 (No prescaling pag134
     TIFR1 = (1 << ICF1); //Limpiando el input capture flag pag 138 PD4
     TIFR1 = (1 << TOV1); //Limpienado el flag de overflow pag 138
 
-    while (TIFR1 & (1 << ICF1) == 0) // esperando al rising edge
+    while (TIFR1 & (1 << ICF1) == 0) // esperando al falling edge
 
     TCNT1 = 0; // Limpieza del contador
     TCCR1B = (1 << CS10); // no preescaler  fallind edge
@@ -63,9 +64,10 @@ long Pulse_Messure()
 
     TimerOverflow = 0;/* Clear Timer overflow count */
     
-    while ((TIFR1 & (1 << ICF1)) == 0);/* Wait for falling edge */
+    while ((TIFR1 & (1 << ICF1)) == 0);/* Wait for rising edge */
 
-    pulse_ms = ICR1 + (65535 * TimerOverflow);
+    pulse_ms = ICR1 + (256 * TimerOverflow);
+
 
     return pulse_ms;
 }
@@ -96,6 +98,7 @@ Cuando ocurre una interrupción- Overflow
 */
 ISR(TIMER1_OVF_vect)
 {
+    PORTB ^= (1<<PB5);
     TimerOverflow++;
 }
 
@@ -119,24 +122,24 @@ int main()
     {   
         
         PORTB &= 0b11101110; //s2 low s3 low
-        sprintf(sensor_salida,"%li\n", Pulse_Messure());
-        USB_Device_write_Com("Activado1\n");
+        sprintf(sensor_salida,"%li", Pulse_Messure());
+        USB_Device_write_Com("-");
         USB_Device_write_Com(sensor_salida);
-        Precise_delay(10);
+        Precise_delay(100);
         
 
         PORTB &= ((1 << PB4) | (1 << PB0)); //s2 y s3 high
-        sprintf(sensor_salida,"%li\n", Pulse_Messure());
-        USB_Device_write_Com("Activado2\n");
+        sprintf(sensor_salida,"%li", Pulse_Messure());
+        USB_Device_write_Com("-");
         USB_Device_write_Com(sensor_salida);
-        Precise_delay(10);
+        Precise_delay(100);
      
 
         PORTB |= 0b00000001; // s2 low s3 high
         sprintf(sensor_salida,"%li\n", Pulse_Messure());
-        USB_Device_write_Com("Activado3\n");
+        USB_Device_write_Com("-");
         USB_Device_write_Com(sensor_salida);
-        Precise_delay(10);
+        Precise_delay(500);
 
         
        
